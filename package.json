@@ -1,7 +1,7 @@
 {
-  "name": "ouro-de-tolo-render",
+  "name": "info-club-render",
   "version": "1.0.0",
-  "description": "Motor de render do canal Ouro de Tolo — gera video longo 16:9 e Short 9:16 a partir de audio + clipes + legendas.",
+  "description": "Motor de render do canal Info Club — gera video longo 16:9 e Short 9:16 a partir de audio + legendas.",
   "type": "module",
   "scripts": {
     "studio": "remotion studio",
