@@ -80,6 +80,8 @@ const run = async () => {
     ganchoTexto: '',
     secoes: props.secoes || [],
     secoesShort: [],
+    fotos: props.fotos_longo || [],
+    fotosShort: [],
   };
   const shortProps = {
     titulo: props.titulo_short,
@@ -90,6 +92,8 @@ const run = async () => {
     ganchoTexto: props.gancho_short || '',
     secoes: [],
     secoesShort: props.secoes_short || [],
+    fotos: [],
+    fotosShort: props.fotos_short || [],
   };
 
   await fsp.writeFile(path.join(BUILD, 'longo.props.json'), JSON.stringify(longoProps, null, 2));

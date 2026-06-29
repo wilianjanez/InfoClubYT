@@ -13,7 +13,8 @@ export const InfoSection: React.FC<{
   startFrame: number;
   color: string;
   variant: 'longo' | 'short';
-}> = ({secao, startFrame, color, variant}) => {
+  onPhoto?: boolean;
+}> = ({secao, startFrame, color, variant, onPhoto = false}) => {
   const frame = useCurrentFrame();
   const {fps} = useVideoConfig();
 
@@ -29,18 +30,23 @@ export const InfoSection: React.FC<{
   const titleSize = isShort ? 32 : 24;
   const pointSize = isShort ? 26 : 18;
 
+  const cardBg = onPhoto ? 'rgba(255,255,255,0.93)' : COLORS.bgCard;
+  const titleColor = COLORS.textPrimary;
+  const pointColor = onPhoto ? '#3730A3' : '#4338CA';
+
   return (
     <div style={{
       display: 'flex',
       alignItems: 'center',
       gap: isShort ? 28 : 20,
       padding: isShort ? '24px 32px' : '16px 22px',
-      backgroundColor: COLORS.bgCard,
+      backgroundColor: cardBg,
       borderRadius: 18,
       borderLeft: `8px solid ${color}`,
-      boxShadow: '0 4px 20px rgba(30,27,75,0.10)',
+      boxShadow: onPhoto ? '0 8px 32px rgba(0,0,0,0.45)' : '0 4px 20px rgba(30,27,75,0.10)',
       transform: `translateX(${translateX}px)`,
       opacity,
+      backdropFilter: onPhoto ? 'blur(2px)' : undefined,
     }}>
       <div style={{
         width: iconSize, height: iconSize,
@@ -58,7 +64,7 @@ export const InfoSection: React.FC<{
         <div style={{
           fontFamily: anton,
           fontSize: titleSize,
-          color: COLORS.textPrimary,
+          color: titleColor,
           letterSpacing: 0.5,
           marginBottom: 5,
         }}>
@@ -69,7 +75,7 @@ export const InfoSection: React.FC<{
             fontFamily: inter,
             fontWeight: 500,
             fontSize: pointSize,
-            color: '#4338CA',
+            color: pointColor,
             lineHeight: 1.35,
             marginTop: 2,
           }}>

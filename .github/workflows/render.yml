@@ -90,6 +90,11 @@ jobs:
 
       # ── Fase de assets (modo manual OU complemento do automático) ─────────
 
+      - name: Buscar fotos (Pexels)
+        env:
+          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+        run: npm run fetch-clips
+
       - name: Baixar audio e clipes (modo manual)
         run: npm run fetch
 

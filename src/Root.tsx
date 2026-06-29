@@ -14,6 +14,8 @@ const defaults: VideoProps = {
   ganchoTexto: '',
   secoes: [],
   secoesShort: [],
+  fotos: [],
+  fotosShort: [],
 };
 
 // duracao = duracao do audio (+ pequena folga p/ outro respirar)

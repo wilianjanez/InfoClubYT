@@ -23,6 +23,8 @@ export const videoSchema = z.object({
   ganchoTexto: z.string().default(''),
   secoes: z.array(secaoSchema).default([]),
   secoesShort: z.array(secaoSchema).default([]),
+  fotos: z.array(z.string()).default([]),
+  fotosShort: z.array(z.string()).default([]),
 });
 
 export type VideoProps = z.infer<typeof videoSchema>;

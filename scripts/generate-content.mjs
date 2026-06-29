@@ -47,10 +47,14 @@ Retorne APENAS um objeto JSON válido, sem markdown, com estes campos:
     {"icone": "🤯", "titulo": "TÍTULO IMPACTANTE", "pontos": ["Um único fato direto e impactante"]},
     {"icone": "💥", "titulo": "TÍTULO IMPACTANTE", "pontos": ["Um único fato direto e impactante"]},
     {"icone": "🧠", "titulo": "VOCÊ SABIA?", "pontos": ["Conclusão surpreendente em uma frase"]}
-  ]
+  ],
+  "foto_keywords": ["termo de busca em inglês para seção 1", "seção 2", "seção 3", "seção 4", "seção 5"],
+  "foto_keywords_short": ["termo para short seção 1", "short seção 2", "short seção 3"]
 }
 
-Regras: português brasileiro coloquial. Títulos das seções em CAIXA ALTA (3-5 palavras). Pontos curtos (máx 12 palavras cada). Emojis temáticos e variados. secoes_short tem exatamente 3 seções com 1 ponto cada.`;
+Regras de foto_keywords: 1-3 palavras em INGLÊS cada, descrevem a imagem ideal para a seção (ex: "ant colony underground", "bioluminescent ocean"). Evite palavras abstratas; prefira cenas, objetos ou lugares visuais e fotogênicos. secoes_short tem exatamente 3 entradas em foto_keywords_short.
+
+Demais regras: português brasileiro coloquial. Títulos das seções em CAIXA ALTA (3-5 palavras). Pontos curtos (máx 12 palavras cada). Emojis temáticos e variados. secoes_short tem exatamente 3 seções com 1 ponto cada.`;
 
   console.log(`Gerando conteúdo para: "${props.tema}" [${model}]...`);
   const message = await client.messages.create({
@@ -77,6 +81,8 @@ Regras: português brasileiro coloquial. Títulos das seções em CAIXA ALTA (3-
     roteiro_short: content.roteiro_short,
     secoes: content.secoes || [],
     secoes_short: content.secoes_short || [],
+    foto_keywords: content.foto_keywords || [],
+    foto_keywords_short: content.foto_keywords_short || [],
   };
 
   await fsp.mkdir(path.join(ROOT, 'build'), {recursive: true});

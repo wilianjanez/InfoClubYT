@@ -1,5 +1,5 @@
-// Busca e baixa clipes de stock do Pexels com base em clip_keywords do props.json.
-// Escreve em public/clips/{long,short}/N.mp4 — mesmos paths que fetch-assets usaria.
+// Busca e baixa fotos do Pexels com base em foto_keywords do props.json.
+// Uma foto por seção: fotos/longo/0.jpg … fotos/short/0.jpg
 import fsp from 'node:fs/promises';
 import path from 'node:path';
 
@@ -8,65 +8,67 @@ const PUB = path.join(ROOT, 'public');
 
 const fileExists = (p) => fsp.access(p).then(() => true).catch(() => false);
 
-const searchPexels = async (query, orientation, count) => {
+const searchPexelsPhoto = async (query, orientation) => {
   const apiKey = process.env.PEXELS_API_KEY;
   if (!apiKey) throw new Error('Falta PEXELS_API_KEY');
 
-  const url = `https://api.pexels.com/videos/search?query=${encodeURIComponent(query)}&per_page=${count}&orientation=${orientation}&size=medium`;
+  const url = `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=5&orientation=${orientation}&size=large`;
   const res = await fetch(url, {headers: {Authorization: apiKey}});
   if (!res.ok) throw new Error(`Pexels ${res.status}: ${await res.text()}`);
   const data = await res.json();
-  return data.videos || [];
+  return data.photos || [];
 };
 
-const getBestFile = (video, preferPortrait) => {
-  const files = (video.video_files || []).filter((f) => f.link && f.width && f.height);
-  if (!files.length) return null;
-  // Ordena por resolução decrescente; para short prefere relação 9:16
-  const scored = files.map((f) => {
-    const res = f.width * f.height;
-    const ratio = f.height / f.width;
-    const ratioBonus = preferPortrait ? (ratio > 1 ? 50_000_000 : 0) : (ratio < 1 ? 50_000_000 : 0);
-    return {f, score: res + ratioBonus};
-  });
-  scored.sort((a, b) => b.score - a.score);
-  return scored[0].f.link;
+const getPhotoUrl = (photo, isPortrait) => {
+  const src = photo.src || {};
+  // Prefere versão orientada, fallback para large/large2x
+  return isPortrait
+    ? (src.portrait || src.large2x || src.large)
+    : (src.landscape || src.large2x || src.large);
 };
 
-const downloadClip = async (url, dest) => {
+const downloadPhoto = async (url, dest) => {
   if (await fileExists(dest)) {
     console.log(`[cache] ${path.relative(ROOT, dest)}`);
     return;
   }
-  console.log(`Baixando clip: ${path.relative(ROOT, dest)}...`);
+  console.log(`Baixando foto: ${path.relative(ROOT, dest)}...`);
   const res = await fetch(url);
-  if (!res.ok) throw new Error(`Download do clip falhou ${res.status}: ${url}`);
+  if (!res.ok) throw new Error(`Download da foto falhou ${res.status}: ${url}`);
   await fsp.mkdir(path.dirname(dest), {recursive: true});
   const buf = Buffer.from(await res.arrayBuffer());
   await fsp.writeFile(dest, buf);
-  console.log(`  -> ${(buf.length / 1024 / 1024).toFixed(1)} MB`);
+  console.log(`  -> ${(buf.length / 1024).toFixed(0)} KB`);
 };
 
-const fetchClipsFor = async (keywords, format, totalClips) => {
-  const isShort = format === 'short';
-  const orientation = isShort ? 'portrait' : 'landscape';
-  const fallbackOrientation = 'landscape';
+const fetchPhotosFor = async (keywords, format) => {
+  const isPortrait = format === 'short';
+  const orientation = isPortrait ? 'portrait' : 'landscape';
   const downloaded = [];
 
-  for (const kw of keywords) {
-    if (downloaded.length >= totalClips) break;
-    let videos = await searchPexels(kw, orientation, 3);
-    if (!videos.length && isShort) {
-      videos = await searchPexels(kw, fallbackOrientation, 3);
+  for (let i = 0; i < keywords.length; i++) {
+    const kw = keywords[i];
+    let photos = await searchPexelsPhoto(kw, orientation);
+
+    // Fallback para landscape se portrait não encontrar
+    if (!photos.length && isPortrait) {
+      photos = await searchPexelsPhoto(kw, 'landscape');
     }
-    if (!videos.length) {
-      console.warn(`Pexels: sem resultado para "${kw}" (${orientation})`);
+
+    if (!photos.length) {
+      console.warn(`Pexels: sem resultado para "${kw}" (${orientation}) — seção ${i} ficará sem foto`);
+      downloaded.push(null);
       continue;
     }
-    const fileUrl = getBestFile(videos[0], isShort);
-    if (!fileUrl) continue;
-    const rel = `clips/${format}/${downloaded.length}.mp4`;
-    await downloadClip(fileUrl, path.join(PUB, rel));
+
+    const photoUrl = getPhotoUrl(photos[0], isPortrait);
+    if (!photoUrl) {
+      downloaded.push(null);
+      continue;
+    }
+
+    const rel = `fotos/${format}/${i}.jpg`;
+    await downloadPhoto(photoUrl, path.join(PUB, rel));
     downloaded.push(rel);
   }
 
@@ -76,26 +78,26 @@ const fetchClipsFor = async (keywords, format, totalClips) => {
 const run = async () => {
   const props = JSON.parse(await fsp.readFile(path.join(ROOT, 'props.json'), 'utf8'));
 
-  if (!props.clip_keywords_longo?.length) {
-    console.log('props.json sem clip_keywords — pulando busca de clipes');
+  const keywordsLongo = props.foto_keywords || [];
+  const keywordsShort = props.foto_keywords_short || [];
+
+  if (!keywordsLongo.length && !keywordsShort.length) {
+    console.log('props.json sem foto_keywords — pulando busca de fotos');
     return;
   }
 
-  const clipsLongo = await fetchClipsFor(props.clip_keywords_longo, 'long', 5);
-  const clipsShort = await fetchClipsFor(props.clip_keywords_short || [], 'short', 3);
+  const fotosLongo = keywordsLongo.length ? await fetchPhotosFor(keywordsLongo, 'longo') : [];
+  const fotosShort = keywordsShort.length ? await fetchPhotosFor(keywordsShort, 'short') : [];
 
-  // Registra os paths no props.json para que fetch-assets saiba a quantidade
-  // (fetch-assets vai ignorar o download pois os arquivos já existem)
+  // Filtra nulls (seções sem foto ficam com string vazia)
   const updatedProps = {
     ...props,
-    audio_longo_url: props.audio_longo_url || 'local',
-    audio_short_url: props.audio_short_url || 'local',
-    clipes_longo: clipsLongo.map((_, i) => `clips/long/${i}.mp4`),
-    clipes_short: clipsShort.map((_, i) => `clips/short/${i}.mp4`),
+    fotos_longo: fotosLongo.map((f) => f || ''),
+    fotos_short: fotosShort.map((f) => f || ''),
   };
 
   await fsp.writeFile(path.join(ROOT, 'props.json'), JSON.stringify(updatedProps, null, 2));
-  console.log(`Clipes: ${clipsLongo.length} longo, ${clipsShort.length} short`);
+  console.log(`Fotos: ${fotosLongo.filter(Boolean).length}/${fotosLongo.length} longo, ${fotosShort.filter(Boolean).length}/${fotosShort.length} short`);
 };
 
 run().catch((e) => {
