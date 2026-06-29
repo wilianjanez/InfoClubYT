@@ -40,43 +40,37 @@ const run = async () => {
 
   // Detecta colunas pelo nome do cabeçalho
   const colTema      = findCol(header, 'tema');
-  const colStatus    = findCol(header, 'status');
-  const colVeredicto = findCol(header, 'veredicto');
+  const colPublicado = findCol(header, 'publicado');
 
-  if (colTema < 0 || colStatus < 0) {
-    throw new Error(`Colunas não encontradas. Cabeçalhos: ${header.join(', ')}`);
+  if (colTema < 0 || colPublicado < 0) {
+    throw new Error(`Colunas necessárias não encontradas. Cabeçalhos detectados: ${header.join(', ')}`);
   }
 
-  console.log(`Colunas detectadas — Tema: ${colTema} | Status: ${colStatus} | Veredicto: ${colVeredicto}`);
+  console.log(`Colunas detectadas — Tema: ${colTema} | Publicado: ${colPublicado}`);
 
-  // Filtra linhas com Status = "fila" (case-insensitive)
+  // Filtra linhas onde Publicado é falsy (false, "", 0 = ainda não publicado)
   const disponiveis = rows
     .slice(1)
-    .map((row, i) => ({row, excelRow: i + 2})) // linha Excel começa em 2 (linha 1 = cabeçalho)
-    .filter(({row}) => norm(row[colStatus]) === 'fila');
+    .map((row, i) => ({row, excelRow: i + 2}))
+    .filter(({row}) => !row[colPublicado]);
 
   if (disponiveis.length === 0) {
-    throw new Error('Nenhum tema com status "fila" disponível na planilha. Adicione mais temas!');
+    throw new Error('Nenhum tema disponível na planilha. Todos já foram publicados!');
   }
 
-  console.log(`${disponiveis.length} tema(s) disponível(is) na fila`);
+  console.log(`${disponiveis.length} tema(s) disponível(is)`);
 
   // Sorteia um aleatoriamente
   const {row, excelRow} = disponiveis[Math.floor(Math.random() * disponiveis.length)];
 
   const tema = row[colTema].toString().trim();
-  const veredictoRaw = colVeredicto >= 0 ? row[colVeredicto].toString().trim() : 'PIRITA';
-  const veredicto = norm(veredictoRaw) === 'ouro' ? 'OURO'
-    : norm(veredictoRaw) === 'misto' ? 'MISTO'
-    : 'PIRITA';
 
   // Gera row_id único para identificar esta linha
-  props.row_id  = String(excelRow);
-  props.tema     = tema;
-  props.veredicto = veredicto;
+  props.row_id = String(excelRow);
+  props.tema   = tema;
 
   await fsp.writeFile(PROPS_PATH, JSON.stringify(props, null, 2));
-  console.log(`✅ Tema selecionado: "${tema}" (linha Excel ${excelRow}, veredicto: ${veredicto})`);
+  console.log(`✅ Tema selecionado: "${tema}" (linha Excel ${excelRow})`);
 };
 
 run().catch((e) => {

@@ -15,9 +15,9 @@ const SHEET_PATH = path.join(ROOT, 'temas', 'temas.xlsx');
 const BUILD = path.join(ROOT, 'build');
 
 // Colunas da planilha (letra da coluna → índice 0-based)
-const COL_STATUS = process.env.SHEETS_STATUS_COL  || 'D'; // Status
-const COL_DATE   = process.env.SHEETS_DATE_COL    || 'F'; // Data de publicação
-const COL_OBS    = process.env.SHEETS_OBS_COL     || 'G'; // Observações
+const COL_STATUS = process.env.SHEETS_STATUS_COL  || 'D'; // Publicado
+const COL_DATE   = process.env.SHEETS_DATE_COL    || 'E'; // DataPublicacao
+const COL_OBS    = process.env.SHEETS_OBS_COL     || 'F'; // Links YouTube
 const STATUS_VAL = process.env.SHEETS_STATUS_VALUE || 'publicado';
 
 const colIndex = (letter) => letter.toUpperCase().charCodeAt(0) - 65; // A=0, B=1…
