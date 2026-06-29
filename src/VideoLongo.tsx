@@ -5,15 +5,23 @@ import {loadFont as loadInter} from '@remotion/google-fonts/Inter';
 import {VideoProps} from './schema';
 import {AnimatedBackground} from './components/AnimatedBackground';
 import {PhotoBackground} from './components/PhotoBackground';
+import {SectionCard} from './components/SectionCard';
 import {Captions} from './components/Captions';
 import {Intro, Outro} from './components/Chrome';
-import {InfoSection} from './components/InfoSection';
 import {COLORS} from './components/Brand';
 
 const anton = loadAnton().fontFamily;
 const inter = loadInter().fontFamily;
 
 const SEC_COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4'];
+
+// Gradiente escuro na base — deixa o card legível sem escurecer a foto inteira
+const BottomGradient: React.FC = () => (
+  <AbsoluteFill style={{
+    background: 'linear-gradient(to top, rgba(0,0,0,0.90) 0%, rgba(0,0,0,0.40) 42%, rgba(0,0,0,0) 68%)',
+    pointerEvents: 'none',
+  }} />
+);
 
 export const VideoLongo: React.FC<VideoProps> = ({
   titulo,
@@ -26,49 +34,51 @@ export const VideoLongo: React.FC<VideoProps> = ({
 
   const introLen = Math.round(fps * 1.6);
   const outroLen = Math.round(fps * 4);
-
   const bodyStart = introLen;
-  const bodyEnd = durationInFrames - outroLen;
+  const bodyEnd   = durationInFrames - outroLen;
   const bodyFrames = bodyEnd - bodyStart;
   const numSections = secoes.length || 1;
-  const perSection = Math.floor(bodyFrames / numSections);
-
-  const hasPhotos = fotos && fotos.length > 0;
+  const perSection  = Math.floor(bodyFrames / numSections);
 
   return (
     <AbsoluteFill>
-      {/* Fallback para intro/outro — fotos cobrem durante o body */}
+      {/* Fundo de fallback (visível durante intro/outro e quando não há foto) */}
       <AnimatedBackground />
 
-      {/* Foto de fundo por seção (Ken Burns) */}
-      {hasPhotos && secoes.map((_, i) => {
-        const foto = fotos[i];
-        if (!foto) return null;
+      <Audio src={staticFile(audioSrc)} />
+
+      {/* Uma seção por vez: foto + gradiente + card */}
+      {secoes.map((secao, i) => {
         const fromFrame = bodyStart + i * perSection;
-        // Última seção estende até o fim do body para evitar flash
-        const dur = i < secoes.length - 1 ? perSection + 15 : bodyEnd - fromFrame;
+        const isLast = i === secoes.length - 1;
+        const dur = isLast ? (bodyEnd - fromFrame) : perSection;
+        const foto = fotos?.[i];
+
         return (
           <Sequence key={i} from={fromFrame} durationInFrames={dur}>
-            <PhotoBackground src={foto} durationInFrames={dur} />
+            {foto
+              ? <PhotoBackground src={foto} durationInFrames={dur} />
+              : <AnimatedBackground />
+            }
+            <BottomGradient />
+            <SectionCard
+              secao={secao}
+              color={SEC_COLORS[i % SEC_COLORS.length]}
+              durationInFrames={dur}
+              variant="longo"
+              index={i}
+              total={secoes.length}
+            />
           </Sequence>
         );
       })}
 
-      {/* Overlay escuro para legibilidade durante o body */}
-      {hasPhotos && (
-        <Sequence from={bodyStart} durationInFrames={bodyEnd - bodyStart}>
-          <AbsoluteFill style={{backgroundColor: 'rgba(0,0,0,0.52)'}} />
-        </Sequence>
-      )}
-
-      <Audio src={staticFile(audioSrc)} />
-
-      {/* Header */}
+      {/* Header semi-transparente — permanece sobre tudo */}
       <div style={{
         position: 'absolute',
         top: 0, left: 0, right: 0,
-        height: 100,
-        backgroundColor: COLORS.dark,
+        height: 88,
+        background: 'linear-gradient(to bottom, rgba(12,10,50,0.95) 0%, rgba(12,10,50,0.65) 100%)',
         display: 'flex',
         alignItems: 'center',
         padding: '0 56px',
@@ -78,12 +88,12 @@ export const VideoLongo: React.FC<VideoProps> = ({
         <div style={{fontFamily: anton, fontSize: 26, color: COLORS.cream, letterSpacing: 1, flexShrink: 0}}>
           INFO<span style={{color: COLORS.gold}}> CLUB</span>
         </div>
-        <div style={{width: 2, height: 28, backgroundColor: COLORS.gold, opacity: 0.5, flexShrink: 0}} />
+        <div style={{width: 2, height: 26, backgroundColor: COLORS.gold, opacity: 0.45, flexShrink: 0}} />
         <div style={{
           fontFamily: inter,
           fontWeight: 700,
-          fontSize: 22,
-          color: COLORS.cream,
+          fontSize: 21,
+          color: 'rgba(255,255,255,0.88)',
           flex: 1,
           overflow: 'hidden',
           whiteSpace: 'nowrap',
@@ -91,31 +101,6 @@ export const VideoLongo: React.FC<VideoProps> = ({
         }}>
           {titulo}
         </div>
-      </div>
-
-      {/* Seções infográficas com cards progressivos */}
-      <div style={{
-        position: 'absolute',
-        top: 112,
-        left: 56,
-        right: 56,
-        bottom: 96,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 14,
-        justifyContent: 'center',
-        zIndex: 5,
-      }}>
-        {secoes.map((secao, i) => (
-          <InfoSection
-            key={i}
-            secao={secao}
-            startFrame={bodyStart + i * perSection}
-            color={SEC_COLORS[i % SEC_COLORS.length]}
-            variant="longo"
-            onPhoto={hasPhotos}
-          />
-        ))}
       </div>
 
       <Captions captions={captions} variant="longo" />
