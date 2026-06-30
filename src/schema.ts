@@ -34,6 +34,7 @@ export const FPS = 30;
 
 export const thumbnailSchema = z.object({
   titulo: z.string().default('Título do Vídeo'),
+  foto: z.string().default(''),
 });
 
 export type ThumbnailProps = z.infer<typeof thumbnailSchema>;

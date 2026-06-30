@@ -53,7 +53,7 @@ export const RemotionRoot: React.FC = () => {
         schema={thumbnailSchema}
         width={1280}
         height={720}
-        defaultProps={{titulo: 'Por que o céu é azul?'}}
+        defaultProps={{titulo: 'Por que o céu é azul?', foto: ''}}
       />
       <Still
         id="ThumbnailShort"
@@ -61,7 +61,7 @@ export const RemotionRoot: React.FC = () => {
         schema={thumbnailSchema}
         width={1280}
         height={720}
-        defaultProps={{titulo: 'Por que dormimos?'}}
+        defaultProps={{titulo: 'Por que dormimos?', foto: ''}}
       />
     </>
   );

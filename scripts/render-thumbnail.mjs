@@ -29,12 +29,18 @@ const run = async () => {
 
   await fsp.mkdir(path.join(ROOT, 'out'), {recursive: true});
 
+  // Usa a primeira foto da seção como fundo da thumbnail (já baixada pelo fetch-clips)
+  const fotoLongo = (props.fotos_longo && props.fotos_longo[0]) || '';
+  const fotoShort = (props.fotos_short && props.fotos_short[0]) || fotoLongo;
+
   renderStill('ThumbnailLongo', path.join(ROOT, 'out/thumbnail_longo.jpg'), {
     titulo: tituloLongo,
+    foto: fotoLongo,
   });
 
   renderStill('ThumbnailShort', path.join(ROOT, 'out/thumbnail_short.jpg'), {
     titulo: tituloShort,
+    foto: fotoShort,
   });
 
   console.log('Thumbnails gerados: out/thumbnail_longo.jpg, out/thumbnail_short.jpg');

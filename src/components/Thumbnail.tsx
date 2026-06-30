@@ -2,47 +2,67 @@ import React from 'react';
 import {AbsoluteFill, Img, staticFile} from 'remotion';
 import {loadFont as loadAnton} from '@remotion/google-fonts/Anton';
 import {loadFont as loadInter} from '@remotion/google-fonts/Inter';
+import {ThumbnailProps} from '../schema';
 
 const anton = loadAnton().fontFamily;
 const inter = loadInter().fontFamily;
 
-const CYAN   = '#00D4FF';
-const GOLD   = '#FFB800';
-const BG     = '#080C18';
+const CYAN = '#00D4FF';
+const GOLD = '#FFB800';
+const BG   = '#07070F';
 
-// Quebra o título em palavras e identifica a primeira como destaque
-const parseTitle = (titulo: string) => {
+const adaptFontSize = (len: number) => {
+  if (len > 60) return 76;
+  if (len > 45) return 90;
+  if (len > 30) return 106;
+  return 120;
+};
+
+// Quebra no primeiro "?" / "!" ou na metade das palavras
+const splitTitle = (titulo: string): [string, string] => {
   const upper = titulo.toUpperCase();
-  const spaceIdx = upper.indexOf(' ');
-  if (spaceIdx < 0) return {firstWord: upper, rest: ''};
-  return {
-    firstWord: upper.slice(0, spaceIdx),
-    rest: upper.slice(spaceIdx + 1),
-  };
+  for (const ch of ['?', '!']) {
+    const i = upper.indexOf(ch);
+    if (i > 4 && i < upper.length - 3) {
+      return [upper.slice(0, i + 1).trim(), upper.slice(i + 1).trim()];
+    }
+  }
+  const words = upper.split(' ');
+  const mid = Math.ceil(words.length / 2);
+  return [words.slice(0, mid).join(' '), words.slice(mid).join(' ')];
 };
 
-// Fonte adaptativa ao comprimento do título
-const adaptFontSize = (titulo: string) => {
-  const len = titulo.length;
-  if (len > 60) return 78;
-  if (len > 45) return 92;
-  if (len > 30) return 108;
-  return 124;
-};
-
-export const Thumbnail: React.FC<{titulo: string}> = ({titulo}) => {
-  const {firstWord, rest} = parseTitle(titulo);
-  const fs = adaptFontSize(titulo);
+export const Thumbnail: React.FC<ThumbnailProps> = ({titulo, foto}) => {
+  const fs = adaptFontSize(titulo.length);
+  const [line1, line2] = splitTitle(titulo);
+  const hasPhoto = !!foto;
 
   return (
     <AbsoluteFill style={{backgroundColor: BG, overflow: 'hidden', fontFamily: anton}}>
 
-      {/* Gradiente lateral direito — cria profundidade */}
+      {/* Foto de fundo (quando disponível) */}
+      {hasPhoto && (
+        <Img
+          src={staticFile(foto)}
+          style={{
+            position: 'absolute',
+            inset: 0,
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            objectPosition: 'center',
+          }}
+        />
+      )}
+
+      {/* Gradiente: escuro à esquerda (texto), foto visível à direita */}
       <AbsoluteFill style={{
-        background: [
-          `radial-gradient(ellipse 50% 80% at 95% 50%, rgba(0,212,255,0.12) 0%, transparent 65%)`,
-          `radial-gradient(ellipse 40% 60% at 10% 50%, rgba(139,92,246,0.09) 0%, transparent 65%)`,
-        ].join(', '),
+        background: hasPhoto
+          ? 'linear-gradient(to right, rgba(7,7,15,0.97) 0%, rgba(7,7,15,0.88) 45%, rgba(7,7,15,0.45) 72%, rgba(7,7,15,0.10) 100%)'
+          : [
+              'radial-gradient(ellipse 55% 65% at 38% 52%, rgba(0,212,255,0.10) 0%, transparent 70%)',
+              'radial-gradient(ellipse 35% 40% at 85% 30%, rgba(255,140,0,0.08) 0%, transparent 65%)',
+            ].join(', '),
       }} />
 
       {/* Linha vertical esquerda — sotaque fino */}
@@ -54,11 +74,10 @@ export const Thumbnail: React.FC<{titulo: string}> = ({titulo}) => {
         borderRadius: '0 4px 4px 0',
       }} />
 
-      {/* Nome do canal — topo esquerdo, discreto */}
+      {/* Nome do canal — topo esquerdo */}
       <div style={{
         position: 'absolute',
-        top: 40,
-        left: 40,
+        top: 40, left: 40,
         display: 'flex',
         alignItems: 'center',
         gap: 10,
@@ -79,54 +98,52 @@ export const Thumbnail: React.FC<{titulo: string}> = ({titulo}) => {
         </span>
       </div>
 
-      {/* Título principal — ocupa a maior parte da tela */}
+      {/* Título principal */}
       <div style={{
         position: 'absolute',
-        left: 40,
-        right: 260,
-        top: 100,
-        bottom: 90,
+        left: 40, right: hasPhoto ? 300 : 260,
+        top: 100, bottom: 90,
         display: 'flex',
         alignItems: 'center',
         padding: '0 20px 0 32px',
       }}>
         <div style={{lineHeight: 1.05}}>
-          {/* Primeira palavra em ciano — chama atenção */}
           <span style={{
             display: 'inline',
             fontSize: fs,
             color: CYAN,
-            textShadow: `0 0 60px ${CYAN}55, 0 3px 24px rgba(0,0,0,0.8)`,
+            textShadow: `0 0 60px ${CYAN}55, 0 3px 24px rgba(0,0,0,0.9)`,
           }}>
-            {firstWord}{' '}
+            {line1}{' '}
           </span>
-          {/* Resto em branco */}
-          <span style={{
-            display: 'inline',
-            fontSize: fs,
-            color: '#FFFFFF',
-            textShadow: '0 3px 24px rgba(0,0,0,0.8)',
-          }}>
-            {rest}
-          </span>
+          {line2 && (
+            <span style={{
+              display: 'inline',
+              fontSize: fs,
+              color: '#FFFFFF',
+              textShadow: '0 3px 24px rgba(0,0,0,0.9)',
+            }}>
+              {line2}
+            </span>
+          )}
         </div>
       </div>
 
-      {/* Badge "VOCÊ SABIA?" — lado direito */}
+      {/* Badge "VOCÊ SABIA?" */}
       <div style={{
         position: 'absolute',
         right: 40,
         top: '50%',
         transform: 'translateY(-50%)',
-        width: 190,
+        width: 180,
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         border: `3px solid ${GOLD}`,
         borderRadius: 16,
         overflow: 'hidden',
+        boxShadow: hasPhoto ? '0 8px 32px rgba(0,0,0,0.6)' : 'none',
       }}>
-        {/* Topo do badge */}
         <div style={{
           backgroundColor: GOLD,
           width: '100%',
@@ -144,33 +161,41 @@ export const Thumbnail: React.FC<{titulo: string}> = ({titulo}) => {
             Você Sabia?
           </span>
         </div>
-        {/* Corpo do badge */}
         <div style={{
-          backgroundColor: 'rgba(0,0,0,0.75)',
+          backgroundColor: 'rgba(0,0,0,0.70)',
           width: '100%',
           textAlign: 'center',
           padding: '14px 10px',
         }}>
-          <span style={{
-            fontSize: 80,
-            lineHeight: 1,
-          }}>💡</span>
+          <span style={{fontSize: 72, lineHeight: 1}}>💡</span>
         </div>
       </div>
 
-      {/* Tagline — rodapé */}
+      {/* Rodapé: linha + tagline */}
       <div style={{
         position: 'absolute',
-        bottom: 34,
-        left: 40,
-        fontFamily: inter,
-        fontWeight: 700,
-        fontSize: 18,
-        color: 'rgba(255,255,255,0.35)',
-        letterSpacing: 3,
-        textTransform: 'uppercase',
+        bottom: 0, left: 20, right: 0,
+        height: 80,
+        display: 'flex',
+        alignItems: 'center',
+        padding: '0 52px',
+        gap: 20,
+        borderTop: '1px solid rgba(255,255,255,0.06)',
       }}>
-        conhecimento nunca é demais
+        <div style={{
+          height: 4, width: 220, borderRadius: 2, flexShrink: 0,
+          background: `linear-gradient(90deg, ${CYAN}, #8B5CF6, #FF3D9A)`,
+        }} />
+        <span style={{
+          fontFamily: inter,
+          fontWeight: 700,
+          fontSize: 17,
+          color: 'rgba(255,255,255,0.30)',
+          letterSpacing: 3,
+          textTransform: 'uppercase',
+        }}>
+          conhecimento nunca é demais
+        </span>
       </div>
 
     </AbsoluteFill>
