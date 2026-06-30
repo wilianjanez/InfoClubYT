@@ -24,7 +24,6 @@ const renderStill = (compositionId, outputFile, props) => {
 const run = async () => {
   const props = JSON.parse(await fsp.readFile(path.join(ROOT, 'props.json'), 'utf8'));
 
-  const veredicto = props.veredicto || 'PIRITA';
   const tituloLongo = props.titulo_longo || props.titulo || props.row_id || 'Vídeo';
   const tituloShort = props.titulo_short || tituloLongo;
 
@@ -32,12 +31,10 @@ const run = async () => {
 
   renderStill('ThumbnailLongo', path.join(ROOT, 'out/thumbnail_longo.jpg'), {
     titulo: tituloLongo,
-    veredicto,
   });
 
   renderStill('ThumbnailShort', path.join(ROOT, 'out/thumbnail_short.jpg'), {
     titulo: tituloShort,
-    veredicto,
   });
 
   console.log('Thumbnails gerados: out/thumbnail_longo.jpg, out/thumbnail_short.jpg');

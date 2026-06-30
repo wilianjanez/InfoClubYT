@@ -60,8 +60,12 @@ const uploadVideo = async (youtube, file, title, description, tags, isShort, thu
         });
         console.log(`Thumbnail definida: ${thumbnailFile}`);
       } catch (e) {
-        // Canal não verificado ou quota — não trava o pipeline
-        console.warn(`Aviso: thumbnail não pôde ser definida: ${e?.errors?.[0]?.reason || e.message}`);
+        const reason = e?.errors?.[0]?.reason || e.message;
+        console.warn(`⚠️  Thumbnail NÃO definida (${reason}).`);
+        if (reason === 'forbidden' || reason === 'youtubeSignupRequired') {
+          console.warn('   → Canal precisa ser VERIFICADO no YouTube Studio para aceitar thumbnails customizadas.');
+          console.warn('   → Acesse: https://www.youtube.com/verify');
+        }
       }
     }
   }
