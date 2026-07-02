@@ -8,8 +8,8 @@ name: render-info-club
 # Modo manual (URLs): client_payload com audio_longo_url, audio_short_url, clipes_longo[], clipes_short[]
 on:
   schedule:
-    # Roda todos os dias às 09:00 horário de Brasília (12:00 UTC)
-    - cron: '0 12 * * *'
+    # Roda todos os dias às 05:00 horário de Brasília (12:00 UTC)
+    - cron: '0 08 * * *'
   repository_dispatch:
     types: [render]
   workflow_dispatch:
