@@ -89,29 +89,45 @@ const run = async () => {
   const youtube = google.youtube({version: 'v3', auth});
   const props = JSON.parse(await fsp.readFile(path.join(ROOT, 'props.json'), 'utf8'));
 
-  const longoResult = await uploadVideo(
-    youtube,
-    'longo.mp4',
-    props.titulo_longo || props.row_id,
-    props.descricao_youtube_longo || '',
-    props.tags || [],
-    false,
-    'thumbnail_longo.jpg',
-  );
-
-  const shortResult = await uploadVideo(
-    youtube,
-    'short.mp4',
-    props.titulo_short || `${props.row_id} #shorts`,
-    props.descricao_youtube_short || '',
-    props.tags || [],
-    true,
-    'thumbnail_short.jpg',
-  );
-
-  const result = {row_id: props.row_id, longo: longoResult, short: shortResult};
   await fsp.mkdir(BUILD, {recursive: true});
-  await fsp.writeFile(path.join(BUILD, 'youtube-result.json'), JSON.stringify(result, null, 2));
+  const resultPath = path.join(BUILD, 'youtube-result.json');
+
+  // Reaproveita resultado de uma tentativa anterior (mesmo row_id) para não duplicar upload já feito
+  let result = {row_id: props.row_id};
+  const cached = await fsp.readFile(resultPath, 'utf8').then(JSON.parse).catch(() => null);
+  if (cached?.row_id === props.row_id) {
+    result = cached;
+  }
+
+  if (result.longo) {
+    console.log(`longo.mp4 já publicado anteriormente: ${result.longo.url} — pulando upload`);
+  } else {
+    result.longo = await uploadVideo(
+      youtube,
+      'longo.mp4',
+      props.titulo_longo || props.row_id,
+      props.descricao_youtube_longo || '',
+      props.tags || [],
+      false,
+      'thumbnail_longo.jpg',
+    );
+    await fsp.writeFile(resultPath, JSON.stringify(result, null, 2));
+  }
+
+  if (result.short) {
+    console.log(`short.mp4 já publicado anteriormente: ${result.short.url} — pulando upload`);
+  } else {
+    result.short = await uploadVideo(
+      youtube,
+      'short.mp4',
+      props.titulo_short || `${props.row_id} #shorts`,
+      props.descricao_youtube_short || '',
+      props.tags || [],
+      true,
+      'thumbnail_short.jpg',
+    );
+    await fsp.writeFile(resultPath, JSON.stringify(result, null, 2));
+  }
 };
 
 run().catch((e) => {
