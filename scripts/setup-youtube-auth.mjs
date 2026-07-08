@@ -22,7 +22,7 @@ const authUrl = auth.generateAuthUrl({
   access_type: 'offline',
   scope: [
     'https://www.googleapis.com/auth/youtube.upload',
-    'https://www.googleapis.com/auth/drive.file',
+    'https://www.googleapis.com/auth/drive',
     'https://www.googleapis.com/auth/spreadsheets',
   ],
   prompt: 'consent',
